@@ -13,9 +13,8 @@ rosrun extended_kalman_filter ekf_node
 
 ---
 ### Reference
+[1] [Site](https://codingcorner.org/blog/the-kalman-filter/)
 
-[site](https://codingcorner.org/blog/the-kalman-filter/)
+[2] [Kalman Filter](https://codingcorner.org/intro-kalman-filter-explained/)
 
-[KF](https://codingcorner.org/kalman-filter-cpp-eigen-cmake/)
-
-[EKF](https://codingcorner.org/extended-kalman-filter-in-cpp-with-eigen3/)
+[3] [Extended Kalman Filter](https://codingcorner.org/extended-kalman-filter-explained/)
