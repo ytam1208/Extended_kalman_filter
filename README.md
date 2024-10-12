@@ -8,7 +8,7 @@ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
 
 rviz
 
-rosrun extended_kalman_filter ekf_node 
+roslaunch extended_kalman_filter ekf.launch
 ```
 
 ---

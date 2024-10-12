@@ -20,12 +20,17 @@ catkin_package(
 )
 
 include_directories(
-  include
+  include 
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/
 )
 
-add_executable(ekf_node src/main.cpp)
+add_executable(ekf_node 
+  src/main.cpp
+  src/sensor_fusion.cpp
+)
+
 target_link_libraries(ekf_node
   ${catkin_LIBRARIES}
   ${EIGEN3_LIBRARIES}
