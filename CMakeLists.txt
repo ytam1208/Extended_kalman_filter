@@ -29,6 +29,7 @@ include_directories(
 add_executable(ekf_node 
   src/main.cpp
   src/sensor_fusion.cpp
+  src/noise_odometry.cpp
 )
 
 target_link_libraries(ekf_node

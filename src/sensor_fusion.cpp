@@ -2,23 +2,25 @@
 
 namespace odom_to_imu {
 
-SensorFusion::SensorFusion() : noise_(0.0, 0.025) {
+SensorFusion::SensorFusion() {
   odom_frame_id_ = "odom";
-  parent_frame_id_ = "base_link";
   ekf_parent_frame_id_ = "fake_base_link";
   
   imu_sub_ = nh_.subscribe("imu", 
-                            100, 
+                            10, 
                             &SensorFusion::ImuCallback, this);
   odom_sub_ = nh_.subscribe("odom", 
-                            100, 
-                            &SensorFusion::OdomCallback, this);
+                            1, 
+                            &SensorFusion::OdomCallback, this); 
+  noise_odom_sub_ = nh_.subscribe("noise_odom", 
+                            1, 
+                            &SensorFusion::NoiseOdomCallback, this);
 
-  odom_pub_ = nh_.advertise<nav_msgs::Odometry>("/ekf_odom", 100);
+  ekf_odom_pub_ = nh_.advertise<nav_msgs::Odometry>("/ekf_odom", 1);
 
-  ori_traj_pub_ = nh_.advertise<nav_msgs::Path>("/ground_truth", 100);
-  ekf_traj_pub_ = nh_.advertise<nav_msgs::Path>("/ekf_traj", 100);
-  noise_ori_traj_pub_ = nh_.advertise<nav_msgs::Path>("/noise_odom_traj", 100);
+  gt_traj_pub_ = nh_.advertise<nav_msgs::Path>("/ground_truth_traj", 1);
+  ekf_traj_pub_ = nh_.advertise<nav_msgs::Path>("/ekf_traj", 1);
+  noise_ori_traj_pub_ = nh_.advertise<nav_msgs::Path>("/noise_odom_traj", 1);
 }
 
 SensorFusion::~SensorFusion() {}
@@ -67,37 +69,38 @@ void SensorFusion::ImuCallback(const sensor_msgs::Imu::ConstPtr& msg) {
 }
 
 void SensorFusion::OdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
-    
-  double dt = (ros::Time::now() - last_time_).toSec();
+  PublishOdomPath(*msg, gt_path_msg_);
+
+  gt_traj_pub_.publish(gt_path_msg_);
+}
+
+void SensorFusion::NoiseOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+  ros::Time current_time = ros::Time::now();
+  double dt = (current_time - last_time_).toSec();
+  last_time_ = current_time;
+
   double vx = msg->twist.twist.linear.x;
   double vy = msg->twist.twist.linear.y;
   double yaw_angular_v = msg->twist.twist.angular.z;
   
   ekf::Vector<kDIM_X> u;
   u << vx, vy, yaw_angular_v;
-
+  
   ekf_.Predict(u, dt);
-  last_time_ = ros::Time::now();
   PublishEkfPath();
-  PublishOdomPath(*msg);
+  PublishOdomPath(*msg, noise_odom_path_msg_);
 
-  ori_traj_pub_.publish(odom_path_msg_);
   ekf_traj_pub_.publish(ekf_odom_path_msg_);
   noise_ori_traj_pub_.publish(noise_odom_path_msg_);
 }
 
-void SensorFusion::PublishOdomPath(const nav_msgs::Odometry& odom_msg) {
+void SensorFusion::PublishOdomPath(const nav_msgs::Odometry& odom_msg,         
+                                   nav_msgs::Path& path_msg) {
   double x = odom_msg.pose.pose.position.x;
   double y = odom_msg.pose.pose.position.y;
   double yaw = CalculateYaw(odom_msg);
-  double noisy_yaw = yaw + noise_(generator_);
 
-  PublishPath(x, y, yaw, 
-              odom_msg.header.frame_id, 
-              odom_path_msg_);
-  PublishPath(x, y, noisy_yaw, 
-              odom_msg.header.frame_id, 
-              noise_odom_path_msg_);
+  PublishPath(x, y, yaw, "odom", path_msg);
 }
 
 void SensorFusion::PublishEkfPath(void) {
@@ -113,7 +116,7 @@ void SensorFusion::PublishEkfPath(void) {
   geometry_msgs::Quaternion odom_quat = 
     tf::createQuaternionMsgFromYaw(ekf_.vecX()(2));
   odom_msg.pose.pose.orientation = odom_quat;
-  odom_pub_.publish(odom_msg);
+  ekf_odom_pub_.publish(odom_msg);
 
   tf::Transform odom_trans;
   odom_trans.setOrigin(tf::Vector3(ekf_.vecX()(0), ekf_.vecX()(1), 0.0));
@@ -128,7 +131,8 @@ void SensorFusion::PublishEkfPath(void) {
                             odom_frame_id_, ekf_parent_frame_id_));
   
   PublishPath(ekf_.vecX()(0), ekf_.vecX()(1), ekf_.vecX()(2), 
-              odom_frame_id_, ekf_odom_path_msg_);
+              "odom", 
+              ekf_odom_path_msg_);
 }
 
 }
