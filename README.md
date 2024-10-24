@@ -4,9 +4,9 @@ Performance evaluation of the algorithm has not been conducted yet.
 
 ---
 ### 1. Test trajectory 
-(Blue: Ground Truth, Green: EKF(Encoder-IMU) trajectory)
+(Blue: Ground Truth, Green: EKF(Encoder-IMU), Red: Odometry(Noise-Encoder) trajectory)
 
-![1](https://github.com/user-attachments/assets/19ce8edd-cf68-4190-8da1-e8fb8538e1e9)
+![image](https://github.com/user-attachments/assets/655efeb0-93aa-4a5f-b02d-1931aad6e808)
 
 
 ### 2. Command
